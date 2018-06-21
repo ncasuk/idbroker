@@ -292,7 +292,9 @@ class LdapSource extends DataSource {
         if ($config['tls']) {
             if (!ldap_start_tls($this->database)) {
                 $this->log("Ldap_start_tls failed", 'ldap.error');
-                fatal_error("Ldap_start_tls failed");
+                #fatal_error("Ldap_start_tls failed");
+                $this->connected = false;
+                return $this->connected;
             }
         }
         //So little known fact, if your php-ldap lib is built against openldap like pretty much every linux
@@ -398,8 +400,8 @@ class LdapSource extends DataSource {
 	 * @param array $fields containing the field names
 	 * @param array $values containing the fields' values
 	 * @return true on success, false on error
-	 */
-	function create( &$model, $fields = null, $values = null ) {
+     */
+	function create(Model $model, $fields = null, $values = null ) {
 		$basedn = $this->config['basedn'];
 		$key = $model->primaryKey;
 		$table = $model->useTable;
@@ -485,7 +487,7 @@ class LdapSource extends DataSource {
 	 * @param integer $recursive Number of levels of association
 	 * @return unknown
 	 */
-	function read( &$model, $queryData = array(), $recursive = null ) {
+	function read(Model $model, $queryData = array(), $recursive = null ) {
 		$this->model = $model;
 		$this->__scrubQueryData($queryData);
 		if (!is_null($recursive)) {
@@ -566,7 +568,7 @@ class LdapSource extends DataSource {
 	/**
 	 * The "U" in CRUD
 	 */
-	function update( &$model, $fields = null, $values = null ) {
+	function update(Model $model, $fields = null, $values = null, $conditions = null) {
 		$fieldsData = array();
 
 		if ($fields == null) {
@@ -629,7 +631,7 @@ class LdapSource extends DataSource {
 	/**
 	 * The "D" in CRUD
 	 */	
-	function delete( &$model ) {
+	function delete(Model $model, $conditions = null ) {
 		// Boolean to determine if we want to recursively delete or not
 		//$recursive = true;
 		$recursive = false;
@@ -788,10 +790,11 @@ class LdapSource extends DataSource {
 	/**
 	 * Returns number of rows in previous resultset. If no previous resultset exists,
 	 * this returns false.
-	 *
+     *
+     * @param $source only needed to match signature of overridden fn.
 	 * @return int Number of rows in resultset
 	 */
-	function lastNumRows() {
+	function lastNumRows($source = null) {
 		if ($this->_result and is_resource($this->_result)) {
 			return @ ldap_count_entries($this->database, $this->_result);
 		}
@@ -1432,7 +1435,7 @@ class LdapSource extends DataSource {
 				}
 		}
 
-	function describe(&$model, $field = null){
+	function describe($model, $field = null){
 		$schemas = $this->__getLDAPschema();
 		$attrs = $schemas['attributetypes'];
 		ksort($attrs);
@@ -1497,9 +1500,12 @@ class LdapSource extends DataSource {
 	}
 
 	function setSchemaPath(){
-		$checkDN = ldap_read($this->database, '', 'objectClass=*', array('subschemaSubentry'));
-		$schemaEntry = ldap_get_entries($this->database, $checkDN);
-		$this->SchemaDN = $schemaEntry[0]['subschemasubentry'][0];
+		$checkDN = ldap_read($this->database, $this->config['basedn'], 'objectClass=*', array('subschemaSubentry'));
+        $schemaEntry = ldap_get_entries($this->database, $checkDN);
+        if($schemaEntry[0]['count'] > 0)
+        {
+            $this->SchemaDN = $schemaEntry[0]['subschemasubentry'][0];
+        }
 	}
 
 	/**

@@ -47,12 +47,12 @@ class LdapAuthenticate extends BaseAuthenticate {
 				$this->groupType = 'group';
 		}
 		$this->userModel = empty($model) ? 'Idbroker.LdapAuth' : $model;
-		$this->model =& ClassRegistry::init($model);
+		$this->model = ClassRegistry::init($model);
 		parent::__construct($collection, $settings);
 	}
 
 	public function authenticate(CakeRequest $request, CakeResponse $response) {
-		CakeLog::write('debug',"Trying to login with:".print_r($request,true));
+		#CakeLog::write('debug',"Trying to login with:".print_r($request,true));
 
                 $userModel = $this->settings['userModel'];
                 list($plugin, $model) = pluginSplit($userModel);
@@ -82,7 +82,7 @@ class LdapAuthenticate extends BaseAuthenticate {
 	* @param CakeRequest $request Request object.
 	* @return mixed Either false or an array of user information
 	*/
-	public function getUser($request) {
+	public function getUser(CakeRequest $request) {
                 $username = env('PHP_AUTH_USER');
                 $pass = env('PHP_AUTH_PW');
 
