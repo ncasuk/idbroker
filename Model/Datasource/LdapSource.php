@@ -821,7 +821,7 @@ class LdapSource extends DataSource {
 		$this->results = @ldap_read($this->database, $this->SchemaDN, $this->SchemaFilter, $schemaTypes,0,0,0,LDAP_DEREF_ALWAYS);
 		if( is_null( $this->results ) ) {
 			$this->log( "LDAP schema filter $schema_filter is invalid!", 'ldap.error');
-			continue;
+			return;
 		}
 
 		$schema_entries = @ldap_get_entries( $this->database, $this->results );
